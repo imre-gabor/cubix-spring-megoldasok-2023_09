@@ -39,6 +39,15 @@ public class CompanyService {
 	}
 
 	public void delete(long id) {
+		
+		//companyRepository.deleteById(id); --> csak akkor megy, ha nincs employee-ja
+		Optional<Company> company = companyRepository.findById(id);
+		if(company.isPresent()) {
+			company.get().getEmployees().forEach(e -> {
+				e.setCompany(null);
+				employeeRepository.save(e);
+			});
+		}
 		companyRepository.deleteById(id);
 	}
 	
@@ -61,7 +70,10 @@ public class CompanyService {
 	
 	public Company replaceEmployees(long id, List<Employee> employees) {
 		Company company = companyRepository.findById(id).get();
-		company.getEmployees().forEach(e -> e.setCompany(null));
+		company.getEmployees().forEach(e -> {
+			e.setCompany(null);
+			employeeRepository.save(e);
+		});
 		company.getEmployees().clear();
 		employees.forEach(e -> {
 			company.addEmployee(e);
