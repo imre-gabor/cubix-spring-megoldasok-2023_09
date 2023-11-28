@@ -31,6 +31,14 @@ public class InitDbService {
 	@Autowired
 	PositionDetailsByCompanyRepository positionDetailsByCompanyRepository;
 	
+	
+	public void clearDb() {
+		positionDetailsByCompanyRepository.deleteAllInBatch();		
+		employeeRepository.deleteAllInBatch();
+		positionRepository.deleteAllInBatch();
+		companyRepository.deleteAllInBatch();
+	}
+	
 	@Transactional
 	public void initDb() {
 		
