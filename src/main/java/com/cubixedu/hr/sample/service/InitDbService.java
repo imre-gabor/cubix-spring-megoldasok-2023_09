@@ -3,6 +3,7 @@ package com.cubixedu.hr.sample.service;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import com.cubixedu.hr.sample.model.PositionDetailsByCompany;
 import com.cubixedu.hr.sample.model.Qualification;
 import com.cubixedu.hr.sample.repository.CompanyRepository;
 import com.cubixedu.hr.sample.repository.EmployeeRepository;
+import com.cubixedu.hr.sample.repository.HolidayRequestRepository;
 import com.cubixedu.hr.sample.repository.PositionDetailsByCompanyRepository;
 import com.cubixedu.hr.sample.repository.PositionRepository;
 
@@ -31,8 +33,14 @@ public class InitDbService {
 	@Autowired
 	PositionDetailsByCompanyRepository positionDetailsByCompanyRepository;
 	
+	@Autowired
+	PasswordEncoder passwordEncoder;
+	
+	@Autowired
+	HolidayRequestRepository holidayRequestRepository;
 	
 	public void clearDb() {
+		holidayRequestRepository.deleteAllInBatch();
 		positionDetailsByCompanyRepository.deleteAllInBatch();		
 		employeeRepository.deleteAllInBatch();
 		positionRepository.deleteAllInBatch();
@@ -47,9 +55,15 @@ public class InitDbService {
 		
 		Employee newEmployee1 = employeeRepository.save(new Employee(null, "ssdf", 200000, LocalDateTime.now()));
 		newEmployee1.setPosition(developer);
+		newEmployee1.setUsername("user1");
+		newEmployee1.setPassword(passwordEncoder.encode("pass"));
+		
 		
 		Employee newEmployee2 = employeeRepository.save(new Employee(null, "t35", 200000, LocalDateTime.now()));
 		newEmployee2.setPosition(tester);
+		newEmployee2.setUsername("user2");
+		newEmployee2.setPassword(passwordEncoder.encode("pass"));
+		newEmployee2.setManager(newEmployee1);
 		
 		Company newCompany = companyRepository.save(new Company(null, 10, "sdfsd", "", null));
 		newCompany.addEmployee(newEmployee2);

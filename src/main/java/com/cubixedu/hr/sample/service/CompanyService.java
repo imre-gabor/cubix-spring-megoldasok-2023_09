@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.cubixedu.hr.sample.model.Company;
 import com.cubixedu.hr.sample.model.Employee;
@@ -52,27 +53,30 @@ public class CompanyService {
 	}
 	
 	
+	@Transactional
 	public Company addEmployee(long id, Employee employee) {
-		Company company = companyRepository.findById(id).get();
+		Company company = companyRepository.findByIdWithEmployees(id).get();
 		company.addEmployee(employee);
 		employeeService.save(employee);
 		return company;
 	}
 	
+	@Transactional
 	public Company deleteEmployee(long id, long employeeId) {
-		Company company = companyRepository.findById(id).get();
+		Company company = companyRepository.findByIdWithEmployees(id).get();
 		Employee employee = employeeService.findById(employeeId).get();
 		employee.setCompany(null);
 		company.getEmployees().remove(employee);
-		employeeService.save(employee);
+		//employeeService.save(employee); transactional miatt felesleges
 		return company;
 	}
 	
+	@Transactional
 	public Company replaceEmployees(long id, List<Employee> employees) {
 		Company company = companyRepository.findById(id).get();
 		company.getEmployees().forEach(e -> {
 			e.setCompany(null);
-			employeeService.save(e);
+			//employeeService.save(e);
 		});
 		company.getEmployees().clear();
 		employees.forEach(e -> {

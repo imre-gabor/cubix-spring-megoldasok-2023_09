@@ -48,7 +48,9 @@ public class CompanyController {
 	//1. megoldás: CompanyDto lemásolásával, de employees kivételével
 	@GetMapping
 	public List<CompanyDto> findAll(@RequestParam Optional<Boolean> full){
-		List<Company> companies = companyService.findAll();
+		List<Company> companies = full.orElse(false)
+				? companyRepository.findAllWithEmployees()
+				: companyService.findAll();
 		return mapCompanies(companies, full);
 	}
 	
@@ -70,7 +72,7 @@ public class CompanyController {
 	
 	@GetMapping("/{id}")
 	public CompanyDto findById(@PathVariable long id, @RequestParam Optional<Boolean> full) {
-		Company company = getCompanyOrThrow(id);
+		Company company = getCompanyOrThrow(id, full);
 		if(full.orElse(false)) {
 			return companyMapper.companyToDto(company);
 		} else {
@@ -144,8 +146,11 @@ public class CompanyController {
 	}
 	
 
-	private Company getCompanyOrThrow(long id) {
-		return companyService.findById(id)
+	private Company getCompanyOrThrow(long id, Optional<Boolean> full) {
+		Optional<Company> optionalCompany = full.orElse(false) 
+				? companyRepository.findByIdWithEmployees(id)
+				: companyService.findById(id);
+		return optionalCompany
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 	}
 	

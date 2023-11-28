@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -17,6 +19,7 @@ import com.cubixedu.hr.sample.dto.HolidayRequestFilterDto;
 import com.cubixedu.hr.sample.model.Employee;
 import com.cubixedu.hr.sample.model.HolidayRequest;
 import com.cubixedu.hr.sample.repository.HolidayRequestRepository;
+import com.cubixedu.hr.sample.security.HrUser;
 
 
 @Service
@@ -71,12 +74,21 @@ public class HolidayRequestService {
 	}
 
 	@Transactional
-	public HolidayRequest approveHolidayRequest(long id, long approverId, boolean status) {
+	public HolidayRequest approveHolidayRequest(long id, boolean status) {
+		long approverId = getCurrentEmployee().getEmployeeId();
 		HolidayRequest holidayRequest = holidayRequestRepository.findById(id).get();
+		Employee manager = holidayRequest.getEmployee().getManager();
+		if(manager != null && manager.getEmployeeId() != approverId)
+			throw new AccessDeniedException("Only manager of employee can approve holiday request.");
+		
 		holidayRequest.setApprover(employeeService.findById(approverId).get());
 		holidayRequest.setApproved(status);
 		holidayRequest.setApprovedAt(LocalDateTime.now());
 		return holidayRequest;
+	}
+
+	private Employee getCurrentEmployee() {
+		return ((HrUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getEmployee();
 	}
 
 	@Transactional
@@ -93,6 +105,9 @@ public class HolidayRequestService {
 	@Transactional
 	public void deleteHolidayRequest(long id) {
 		HolidayRequest holidayRequest = holidayRequestRepository.findById(id).get();
+		if(getCurrentEmployee().getEmployeeId().longValue() != holidayRequest.getEmployee().getEmployeeId().longValue())
+			throw new AccessDeniedException("Only the employee of the holiday request can delete it.");
+		
 		if (holidayRequest.getApproved() != null)
 			throw new IllegalArgumentException();
 		holidayRequest.getEmployee().getHolidayRequests().remove(holidayRequest);
